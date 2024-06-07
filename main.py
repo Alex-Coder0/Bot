@@ -1,7 +1,7 @@
 import telebot  # type: ignore
 import datasever as ds
 from telebot import types
-from token_1 import token
+from token_1 import token, admin_password
 
 # Инициализация бота с токеном
 bot = telebot.TeleBot(token)
@@ -277,10 +277,36 @@ def smoke_stop(message):
 
 #функция регестрации админа
 def reg_admin(message):
+    """
+    Регистрирует нового администратора. Проверяет текст сообщения, пароль и статус пользователя.
+    """
+    # Открываем файл admin.txt для добавления новой записи
     with open("admin.txt", 'a') as file:
         text = message.text
+        data = text.split()
+        print(data)
+        
+        # Проверяем, если сообщение содержит 'отмена', прерываем выполнение функции
         if 'отмена' in text:
             return
+
+        # Проверяем, зарегистрирован ли пользователь как админ
+        if not find_admin_by_chat_id(message.chat.id):
+            # Проверяем правильность пароля
+            if int(data[2]) == int(admin_password):
+                # Проверяем, зарегистрирован ли пользователь как сотрудник
+                if not find_user_by_chat_id(message.chat.id):
+                    # Записываем данные нового админа в файл
+                    file.write(f"{data[0]} {data[1]} {message.chat.id}\n")
+                    bot.send_message(message.chat.id, "Админ зарегистрирован")
+                else:
+                    bot.send_message(message.chat.id, "Ты уже зарегистрирован как сотрудник")
+            else:
+                bot.send_message(message.chat.id, "Пароль не верный")
+        else:
+            bot.send_message(message.chat.id, "Ты уже зарегистрирован как админ")
+
+
 
 # Функция регистрации пользователя
 def reg(message):
