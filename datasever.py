@@ -1,91 +1,80 @@
 import datetime
 
 def add_data(data):
-	file = open(crypt() + ".data", "a")
-	for i in range(len(data)):
-		file.write(str(data[i]) + " ")
+    """
+    Добавляет данные в файл. Записывает переданные данные и текущее время.
+    """
+    filename = f"{crypt()}.data"
+    with open(filename, "a") as file:
+        # Записываем данные, разделяя пробелами
+        file.write(" ".join(map(str, data)) + " ")
+        # Записываем текущее время
+        current_time = datetime.datetime.now().strftime("%X")
+        file.write(current_time + "\n")
 
-	x = datetime.datetime.now()
-	x = x.strftime("%X")
-	file.write(x)
-	file.write("\n")
-	file.close()
+def find_user_info(firstname, lastname):
+    """
+    Ищет информацию о пользователе в файле. Возвращает время, проведенное пользователем, и статус.
+    """
+    filename = f"{crypt()}.data"
+    try:
+        with open(filename, "r") as file:
+            lines = file.readlines()
 
+        stats = []
+        total_time = datetime.datetime.strptime("0:0:0", '%H:%M:%S')
+        
+        # Ищем строки, содержащие имя и фамилию пользователя
+        for line in lines:
+            if firstname in line and lastname in line:
+                stats.append(line.split())
+        
+        for i, stat in enumerate(stats):
+            if stat[4] == 's':  # Проверяем статус 's'
+                try:
+                    # Вычисляем разницу времени между записями
+                    end_time_str = stats[i+1][6]
+                    start_time_str = stat[6]
+                    end_time = datetime.datetime.strptime(end_time_str, '%H:%M:%S')
+                    start_time = datetime.datetime.strptime(start_time_str, '%H:%M:%S')
+                    total_time += end_time - start_time
+                except IndexError:
+                    # Обрабатываем последний случай, если записи нет
+                    start_time_str = stat[6]
+                    start_time = datetime.datetime.strptime(start_time_str, '%H:%M:%S')
+                    current_time_str = datetime.datetime.now().strftime("%X")
+                    current_time = datetime.datetime.strptime(current_time_str, '%H:%M:%S')
+                    total_time = current_time - start_time
+                    return 1, total_time
 
-def find_user_info(firsname,lastname):
-	try: 
-		file = open(crypt() + ".data", "r")
-		a = file.readlines()
-		b = len(a)
-		stats = []
-		timer = datetime.datetime.strptime("0:0:0",'%H:%M:%S')
-		for i in range(b):
-			if str(firsname) in a[i] and str(lastname) in a[i]:
-				j = a[i].split()
-				stats.append(j)
-		
-		for i in range(len(stats)):
-			if stats[i][4] == 's':
-				try:
-					ts = stats[i+1][6]
-					te = stats[i][6]
-					ts_d = datetime.datetime.strptime(ts, '%H:%M:%S')
-					te_d = datetime.datetime.strptime(te, '%H:%M:%S')
-					timer += ts_d - te_d
-				except IndexError:
-					te = stats[i][6]
-					te_d = datetime.datetime.strptime(te, '%H:%M:%S')
-					x = datetime.datetime.now()
-					x = x.strftime("%X")
-					x_d = datetime.datetime.strptime(x, '%H:%M:%S')
-					timer = x_d-te_d
-					print(timer)
-					return 1, timer
-		x = str(timer)
+        return str(total_time)[11:], 0
 
-		return x[11:], 0
-	except IOError:
-		return "В файле нет записей", 0
+    except IOError:
+        return "В файле нет записей", 0
 
+def find_data(firstname, lastname):
+    """
+    Ищет последнюю запись о курении и еде пользователя в файле.
+    """
+    filename = f"{crypt()}.data"
+    with open(filename, "a"):
+        pass
 
+    with open(filename, "r") as file:
+        lines = file.readlines()
 
+    # Ищем строки, содержащие имя и фамилию пользователя
+    stats = [line.split() for line in lines if firstname in line and lastname in line]
 
+    # Получаем последние значения курения и еды
+    smokes = stats[-1][2] if stats else 0
+    eats = stats[-1][3] if stats else 0
 
-
-def find_data(firsname,lastname):
-	file1 = open(crypt() + ".data", "a")
-	file1.close()
-	file = open(crypt() + ".data", "r")
-	a = file.readlines()
-	b = len(a)
-	stats = []
-		
-	for i in range(b):
-		if str(firsname) in a[i] and str(lastname) in a[i]:
-			j = a[i].split()
-			stats.append(j)
-	try:
-		smokes = stats[len(stats)-1][2]
-	except IndexError:
-		smokes = 0
-	try:
-		eats = stats[len(stats)-1][3]
-	except IndexError:
-		eats = 0
-		
-	return smokes,eats
-			
-
-
+    return smokes, eats
 
 def crypt():
-	x = datetime.datetime.now()
-	years = x.year
-	month = x.month
-	days = x.day
-	crypt = str(years) + str(days) + str(month)
-	return crypt
-
-# x = ["Alexander", "Smirnov", 0, 0, "s"]
-# add_data(x)
-# print(find_data("Alexander"))
+    """
+    Генерирует имя файла на основе текущей даты.
+    """
+    current_time = datetime.datetime.now()
+    return f"{current_time.year}{current_time.day}{current_time.month}"

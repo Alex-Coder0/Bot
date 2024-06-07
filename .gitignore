@@ -1,3 +1,4 @@
 *.txt
 token_1.py
 *.data
+__pycache__/
