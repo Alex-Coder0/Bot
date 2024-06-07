@@ -1,6 +1,5 @@
 import telebot  # type: ignore
 import datasever as ds
-import user as u
 from telebot import types
 from token_1 import token
 
