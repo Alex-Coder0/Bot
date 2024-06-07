@@ -20,6 +20,12 @@ def registration(message):
     bot.send_message(message.chat.id, "Введите информацию о вас в формате (Фамилия, имя , пароль) или 'отмена' если зашли сюда случайно: ")  
     bot.register_next_step_handler(message, reg_admin)
 
+def create_admin_buttons():
+    markup = types.ReplyKeyboardMarkup(row_width=2)
+    info_all = types.KeyboardButton('Информация по всем')
+    exit_ = types.KeyboardButton('Назад')
+    markup.add(info_all, exit_)
+    return markup
 
 # Функция для создания кнопок
 def create_buttons():
@@ -29,7 +35,8 @@ def create_buttons():
     smoke_start_btn = types.KeyboardButton('начать курить')
     smoke_stop_btn = types.KeyboardButton('закончить курить')
     information_button = types.KeyboardButton('информация')
-    markup.add(eat_start_btn, eat_stop_btn, smoke_start_btn, smoke_stop_btn,information_button)
+    admin_button = types.KeyboardButton('Администрирование')
+    markup.add(eat_start_btn, eat_stop_btn, smoke_start_btn, smoke_stop_btn,information_button,admin_button)
     return markup
 
 # Обработчик команды /start
@@ -54,10 +61,30 @@ def handle_text(message):
         eat_stop(message)
     elif text == 'информация':
         information(message)
+    elif text == 'администрирование':
+        if find_admin_by_chat_id(message.chat.id):
+            admin(message)
+        else:
+            bot.send_message(message.chat.id, "Извините, вы не администратор.")
+
+    elif text == 'информация по всем':
+        if find_admin_by_chat_id(message.chat.id):
+            information_all(message)
+        else:
+            bot.send_message(message.chat.id, "Извините, вы не администратор.")
+
+    elif text == 'назад':
+        if find_admin_by_chat_id(message.chat.id):
+            markup = create_buttons()
+            bot.send_message(message.chat.id, "Дабро пожаловать в режим сотрудника! Выберите действие: " , reply_markup=markup)
+        else:
+            bot.send_message(message.chat.id, "Извините, вы не администратор.")
     else:
         bot.send_message(message.chat.id, "Извините, я не могу понять ваш запрос.")
 
-#
+
+
+#Поиск админа по chat_id
 def find_admin_by_chat_id(chat_id):
     lines = open("admin.txt", 'r').readlines()
     for line in lines:
@@ -92,6 +119,28 @@ def is_user_smoking(user):
         if line.strip() == user:
             return True
     return False
+
+def admin(message):
+    markup = create_admin_buttons()
+    bot.send_message(message.chat.id, "Добро пожаловать в режим администратора! Выберите действие:", reply_markup=markup)
+
+def information_all(message):
+        with open("reg.txt", "r") as file:
+            lines = file.readlines()
+        
+        for i in range(len(lines)):
+            line = lines[i].split()
+            del line[2]
+            time = ds.find_user_info(line[0],line[1])
+            if time[0] != 1:
+                smoke,eat = ds.find_data(line[0],line[1])
+                bot.send_message(message.chat.id, f"{line[0] + " " + line[1]} : \n - Время отдыха: {time[0]} \n - Обедал {eat}, Курил {smoke} \n - Статус: В торговом зале")
+            else:
+                if is_user_eating(find_user_by_chat_id(message.chat.id)):
+                    bot.send_message(message.chat.id, f"{line[0] + " " + line[1]} : \n - Сейчас обедает. \n - Обед продолжается {time[1]} ")
+                else:
+                    bot.send_message(message.chat.id, f"{line[0] + " " + line[1]} : \n - Сейчас курит. \n - Курение продолжается {time[1]} ")
+
 
 def information(message):
      user = find_user_by_chat_id(message.chat.id)
@@ -310,9 +359,12 @@ def reg_admin(message):
 
 # Функция регистрации пользователя
 def reg(message):
-    with open("reg.txt", 'a') as file:
-        text = message.text
-        file.write(str(text) + " " + str(message.chat.id) + "\n")
+    if not find_admin_by_chat_id(message.chat.id):
+        with open("reg.txt", 'a') as file:
+            text = message.text
+            file.write(str(text) + " " + str(message.chat.id) + "\n")
+    else:
+        bot.send_message(message.chat.id, "Ты админ.")
 
 # Запуск бота
 bot.polling()
